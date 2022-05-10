@@ -79,3 +79,28 @@ exports.getBorrowRecords = (req, res) => {
       });
     });
 }
+
+exports.returnEquipments = (req, res) => {
+  const {borrowedOn, returnedOn} = req.body;
+  if (returnedOn == '') {
+    return res.status(400).json({
+      message: "Please fill the returned date."
+    });
+  } else if (borrowedOn == '') {
+    return res.status(400).json({
+      message: "Unable to proceed. Please try again."
+    });
+  } else if (returnedOn < borrowedOn) {
+    return res.status(400).json({
+      message: "Please re-check the returned date."
+    });
+  } else {
+    // BorrowRecord.update({returnedOn: returnedOn}, {where: {id: req.params.borrowRecordId}})
+    //   .then(() => {
+    //
+    //   })
+    //   .catch((error) => {
+    //
+    //   });
+  }
+}
