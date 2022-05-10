@@ -2,6 +2,7 @@ const db = require('../models/index');
 const BorrowRecord = db.BorrowRecord;
 const BorrowedItemGroup = db.BorrowedItemGroup;
 const ItemGroup = db.ItemGroup;
+const Player = db.Player;
 
 exports.createRecord = async (req, res) => {
   const {player, reason, borrowDate, returnDate, quantities} = req.body;
@@ -56,4 +57,25 @@ exports.createRecord = async (req, res) => {
       });
     }
   }
+}
+
+exports.getBorrowRecords = (req, res) => {
+  BorrowRecord.findAll({
+    include: [{
+      model: Player,
+      attributes: ['firstName', 'lastName']
+    }, {
+      model: BorrowedItemGroup,
+      attributes: ['ItemGroupId', 'quantity']
+    }]
+  })
+    .then((borrowRecords) => {
+      return res.status(200).json(borrowRecords);
+    })
+    .catch((error) => {
+      console.log("> GET BORROW RECORD DETAILS ERROR: ", error);
+      return res.status(400).json({
+        message: "Unable to load borrow records."
+      });
+    });
 }
