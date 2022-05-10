@@ -20,7 +20,7 @@ module.exports = (sequelize, DataTypes) => {
     },
     returnedOn: {
       type: DataTypes.DATEONLY,
-      allowNull: false
+      allowNull: true
     }
   }, {timestamps: false});
 }
