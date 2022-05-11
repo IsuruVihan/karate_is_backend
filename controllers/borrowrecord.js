@@ -95,12 +95,36 @@ exports.returnEquipments = (req, res) => {
       message: "Please re-check the returned date."
     });
   } else {
-    // BorrowRecord.update({returnedOn: returnedOn}, {where: {id: req.params.borrowRecordId}})
-    //   .then(() => {
-    //
-    //   })
-    //   .catch((error) => {
-    //
-    //   });
+    BorrowRecord.update({returnedOn: returnedOn}, {where: {id: req.params.borrowRecordId}})
+      .then(() => {
+        BorrowedItemGroup.findAll({
+          attributes: ['ItemGroupId', 'quantity'],
+          where: {
+            BorrowRecordId: req.params.borrowRecordId
+          }
+        })
+          .then((borrowItemGroups) => {
+            borrowItemGroups.map((group) => {
+              let newItemQuantity = 0;
+              ItemGroup.findAll({
+                attributes: ['availableQuantity'],
+                where: {id: group.dataValues.ItemGroupId}
+              })
+                .then(async (availableQuantity) => {
+                  newItemQuantity = availableQuantity[0].dataValues.availableQuantity + group.dataValues.quantity;
+                  await ItemGroup.update({availableQuantity: newItemQuantity}, {where: {id: group.dataValues.ItemGroupId}});
+                });
+            });
+            return res.status(200).json({
+              message: "Borrow record returned successfully."
+            });
+          });
+      })
+      .catch((error) => {
+        console.log("> BORROW RECORD RETURN ERROR: ", error);
+        return res.status(400).json({
+          message: "Unable to return borrow record."
+        });
+      });
   }
 }
