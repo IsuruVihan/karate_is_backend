@@ -25,6 +25,7 @@ db.Admin = require('./Admin')(sequelize, DataTypes);
 db.ItemGroup = require('./ItemGroup')(sequelize, DataTypes);
 db.BorrowRecord = require('./BorrowRecord')(sequelize, DataTypes);
 db.BorrowedItemGroup = require('./BorrowedItemGroup')(sequelize, DataTypes);
+db.Coach = require('./Coach')(sequelize, DataTypes);
 
 /* Relations */
 
