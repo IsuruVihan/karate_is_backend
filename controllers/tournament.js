@@ -20,10 +20,10 @@ exports.createTournament = async (req, res) => {
       .then((tournament) => {
         if (team.length>0) {
           team.map(async (teamPlayer) => {
-            await TeamPlayer.create({
+            teamPlayer.attendance && await TeamPlayer.create({
               achievements: teamPlayer.achievements,
               TournamentId: tournament.id,
-              PlayerId: teamPlayer.playerId
+              PlayerId: teamPlayer.id
             });
           });
         }
