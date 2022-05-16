@@ -10,5 +10,5 @@ module.exports = (sequelize, DataTypes) => {
       type: DataTypes.STRING(1000),
       allowNull: false
     }
-  });
+  }, {timestamps: false});
 }
