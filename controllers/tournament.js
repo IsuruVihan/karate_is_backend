@@ -9,9 +9,13 @@ exports.createTournament =  async (req, res) => {
   team.map((player) => {
     if (player.attendance) ++participatedCount;
   });
-  if (!ongoing && (name == '' || venue == '' || from == '' || to == '' || result == '' || participatedCount == 0)) {
+  if (!ongoing && (name == '' || venue == '' || from == '' || to == '' || result == '')) {
     return res.status(400).json({
       message: "Please fill all fields or put a tick on 'Mark as an ongoing tournament'"
+    });
+  } else if (participatedCount == 0) {
+    return res.status(400).json({
+      message: "There should be at-least one team player."
     });
   } else {
     const ongoingTournament = await Tournament.findAll({attributes: ['name'], where: {ongoing: true}});
@@ -133,7 +137,7 @@ exports.updateTournament = async (req, res) => {
       to: to,
       result: result
     }, {where: {id: id}})
-      .then((tournament) => {
+      .then(() => {
         let teamPlayerIds = [];
         team.map((teamPlayer) => {
           teamPlayerIds.push(teamPlayer.id);
@@ -143,18 +147,18 @@ exports.updateTournament = async (req, res) => {
             team.map(async (teamPlayer) => {
               await TeamPlayer.create({
                 achievements: teamPlayer.achievements,
-                TournamentId: tournament.id,
-                PlayerId: teamPlayer.playerId
+                TournamentId: id,
+                PlayerId: teamPlayer.Player.id
               });
             });
             return res.status(200).json({
-              message: 'Unable to update tournament details.'
+              message: 'Tournament data has been updated successfully.'
             });
           })
           .catch((error2) => {
             console.log('> UPDATE TOURNAMENT DETAILS ERROR: ', error2);
-            return res.status(200).json({
-              message: 'Tournament details updated successfully.'
+            return res.status(400).json({
+              message: 'Unable to update tournament details.'
             });
           });
       })
