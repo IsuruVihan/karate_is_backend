@@ -36,34 +36,43 @@ exports.createTournament =  async (req, res) => {
             message: `"From" date must be <= today's date & "To" date must be >= today's date. (Ongoing tournament)`
           });
         } else {
-          Tournament.create({
-            name: name == '' ? null : name,
-            venue: venue == '' ? null : venue,
-            from: from == '' ? null : from,
-            to: to == '' ? null : to,
-            ongoing: ongoing,
-            result: result == '' ? null : result
-          })
-            .then((tournament) => {
-              if (team.length > 0) {
-                team.map(async (teamPlayer) => {
-                  teamPlayer.attendance && await TeamPlayer.create({
-                    achievements: teamPlayer.achievements,
-                    TournamentId: tournament.id,
-                    PlayerId: teamPlayer.id
-                  });
-                });
-              }
-              return res.status(200).json({
-                message: 'Tournament has been created successfully.'
-              });
-            })
-            .catch((error) => {
-              res.status(400).json({
-                message: 'Unable to create the tournament.'
-              });
-              console.log('> CREATE TOURNAMENT ERROR: ', error);
+          let sameTournament = await Tournament.findAll({
+            where: {name: name}
+          });
+          if (sameTournament.length>0) {
+            return res.status(400).json({
+              message: `Tournament "${name}" already exists.`
             });
+          } else {
+            Tournament.create({
+              name: name == '' ? null : name,
+              venue: venue == '' ? null : venue,
+              from: from == '' ? null : from,
+              to: to == '' ? null : to,
+              ongoing: ongoing,
+              result: result == '' ? null : result
+            })
+              .then((tournament) => {
+                if (team.length > 0) {
+                  team.map(async (teamPlayer) => {
+                    teamPlayer.attendance && await TeamPlayer.create({
+                      achievements: teamPlayer.achievements,
+                      TournamentId: tournament.id,
+                      PlayerId: teamPlayer.id
+                    });
+                  });
+                }
+                return res.status(200).json({
+                  message: 'Tournament has been created successfully.'
+                });
+              })
+              .catch((error) => {
+                res.status(400).json({
+                  message: 'Unable to create the tournament.'
+                });
+                console.log('> CREATE TOURNAMENT ERROR: ', error);
+              });
+          }
         }
       }
     }
