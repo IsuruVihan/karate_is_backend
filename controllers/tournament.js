@@ -79,14 +79,15 @@ exports.createTournament =  async (req, res) => {
   }
 }
 
-exports.getTournaments = async (req, res) => {
+exports.getPastTournaments = async (req, res) => {
   Tournament.findAll({
+    where: {ongoing: 0},
     include: [{
       model: TeamPlayer,
       attributes: ['id', 'achievements'],
       include: [{
         model: Player,
-        attributes: ['firstName', 'lastName']
+        attributes: ['id', 'firstName', 'lastName']
       }]
     }]
   })
@@ -96,9 +97,9 @@ exports.getTournaments = async (req, res) => {
       });
     })
     .catch((error) => {
-      console.log('> RETRIEVE TOURNAMENT DETAILS ERROR: ', error);
+      console.log('> RETRIEVE PAST TOURNAMENT DETAILS ERROR: ', error);
       return res.status(400).json({
-        message: 'Unable to retrieve tournament details.'
+        message: 'Unable to retrieve past tournament details.'
       });
     });
 }
@@ -139,43 +140,59 @@ exports.updateTournament = async (req, res) => {
       message: 'Team should have at-least one player.'
     });
   } else {
-    Tournament.update({
-      name: name,
-      venue: venue,
-      from: from,
-      to: to,
-      result: result
-    }, {where: {id: id}})
-      .then(() => {
-        let teamPlayerIds = [];
-        team.map((teamPlayer) => {
-          teamPlayerIds.push(teamPlayer.id);
+
+
+    const date = new Date();
+    const today = (date.getFullYear())+"-"+((date.getMonth()+1)<10?("0"+(date.getMonth()+1)):(date.getMonth()+1))+"-"+(date.getDate());
+    if (to < from) {
+      return res.status(400).json({
+        message: `Please recheck "From" and "To" date values.`
+      });
+    } else {
+      if ((today < from) || (today > to)) {
+        return res.status(400).json({
+          message: `"From" date must be <= today's date & "To" date must be >= today's date. (Ongoing tournament)`
         });
-        TeamPlayer.destroy({ where: {id: teamPlayerIds}})
+      } else {
+        Tournament.update({
+          name: name,
+          venue: venue,
+          from: from,
+          to: to,
+          result: result
+        }, {where: {id: id}})
           .then(() => {
-            team.map(async (teamPlayer) => {
-              await TeamPlayer.create({
-                achievements: teamPlayer.achievements,
-                TournamentId: id,
-                PlayerId: teamPlayer.Player.id
+            let teamPlayerIds = [];
+            team.map((teamPlayer) => {
+              teamPlayerIds.push(teamPlayer.id);
+            });
+            TeamPlayer.destroy({ where: {id: teamPlayerIds}})
+              .then(() => {
+                team.map(async (teamPlayer) => {
+                  await TeamPlayer.create({
+                    achievements: teamPlayer.achievements,
+                    TournamentId: id,
+                    PlayerId: teamPlayer.Player.id
+                  });
+                });
+                return res.status(200).json({
+                  message: 'Tournament data has been updated successfully.'
+                });
+              })
+              .catch((error2) => {
+                console.log('> UPDATE TOURNAMENT DETAILS ERROR: ', error2);
+                return res.status(400).json({
+                  message: 'Unable to update tournament details.'
+                });
               });
-            });
-            return res.status(200).json({
-              message: 'Tournament data has been updated successfully.'
-            });
           })
-          .catch((error2) => {
-            console.log('> UPDATE TOURNAMENT DETAILS ERROR: ', error2);
+          .catch((error) => {
+            console.log('> UPDATE TOURNAMENT DETAILS ERROR: ', error);
             return res.status(400).json({
               message: 'Unable to update tournament details.'
             });
           });
-      })
-      .catch((error) => {
-        console.log('> UPDATE TOURNAMENT DETAILS ERROR: ', error);
-        return res.status(400).json({
-          message: 'Unable to update tournament details.'
-        });
-      });
+      }
+    }
   }
 }
