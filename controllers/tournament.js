@@ -2,41 +2,66 @@ const db = require('../models/index');
 const Tournament = db.Tournament;
 const TeamPlayer = db.TeamPlayer;
 
-exports.createTournament = async (req, res) => {
+exports.createTournament =  async (req, res) => {
   const {name, venue, from, to, ongoing, result, team} = req.body;
-  if (!ongoing && (name=='' || venue=='' || from=='' || to=='' || result=='' || team.length==0)) {
+  let participatedCount = 0;
+  team.map((player) => {
+    if (player.attendance) ++participatedCount;
+  });
+  if (!ongoing && (name == '' || venue == '' || from == '' || to == '' || result == '' || participatedCount == 0)) {
     return res.status(400).json({
       message: "Please fill all fields or put a tick on 'Mark as an ongoing tournament'"
     });
   } else {
-    Tournament.create({
-      name: name,
-      venue: venue,
-      from: from,
-      to: to,
-      ongoing: ongoing,
-      result: result
-    })
-      .then((tournament) => {
-        if (team.length>0) {
-          team.map(async (teamPlayer) => {
-            teamPlayer.attendance && await TeamPlayer.create({
-              achievements: teamPlayer.achievements,
-              TournamentId: tournament.id,
-              PlayerId: teamPlayer.id
-            });
-          });
-        }
-        return res.status(200).json({
-          message: 'Tournament has been created successfully.'
-        });
-      })
-      .catch((error) => {
-        res.status(400).json({
-          message: 'Unable to create the tournament.'
-        });
-        console.log('> CREATE TOURNAMENT ERROR: ', error);
+    const ongoingTournament = await Tournament.findAll({attributes: ['name'], where: {ongoing: true}});
+    if (ongoing && ongoingTournament.length > 0) {
+      return res.status(400).json({
+        message: `There's already an ongoing tournament "${ongoingTournament[0].dataValues.name}"`
       });
+    } else {
+      const date = new Date();
+      const today = (date.getFullYear())+"-"+((date.getMonth()+1)<10?("0"+(date.getMonth()+1)):(date.getMonth()+1))+"-"+(date.getDate());
+      if (to < from) {
+        return res.status(400).json({
+          message: `Please recheck "From" and "To" date values.`
+        });
+      } else {
+        if (ongoing && ((today < from) || (today > to))) {
+          return res.status(400).json({
+            message: `"From" date must be <= today's date & "To" date must be >= today's date. (Ongoing tournament)`
+          });
+        } else {
+          Tournament.create({
+            name: name == '' ? null : name,
+            venue: venue == '' ? null : venue,
+            from: from == '' ? null : from,
+            to: to == '' ? null : to,
+            ongoing: ongoing,
+            result: result == '' ? null : result
+          })
+            .then((tournament) => {
+              if (team.length > 0) {
+                team.map(async (teamPlayer) => {
+                  teamPlayer.attendance && await TeamPlayer.create({
+                    achievements: teamPlayer.achievements,
+                    TournamentId: tournament.id,
+                    PlayerId: teamPlayer.id
+                  });
+                });
+              }
+              return res.status(200).json({
+                message: 'Tournament has been created successfully.'
+              });
+            })
+            .catch((error) => {
+              res.status(400).json({
+                message: 'Unable to create the tournament.'
+              });
+              console.log('> CREATE TOURNAMENT ERROR: ', error);
+            });
+        }
+      }
+    }
   }
 }
 

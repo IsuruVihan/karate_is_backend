@@ -8,28 +8,28 @@ module.exports = (sequelize, DataTypes) => {
     },
     name: {
       type: DataTypes.STRING,
-      allowNull: false,
+      allowNull: true,
       unique: true
     },
     venue: {
       type: DataTypes.STRING,
-      allowNull: false
+      allowNull: true
     },
     from: {
       type: DataTypes.DATEONLY,
-      allowNull: false
+      allowNull: true
     },
     to: {
       type: DataTypes.DATEONLY,
-      allowNull: false
+      allowNull: true
     },
     ongoing: {
       type: DataTypes.BOOLEAN,
-      allowNull: false
+      allowNull: true
     },
     result: {
       type: DataTypes.STRING(1000),
-      allowNull: false
+      allowNull: true
     }
   });
 }
