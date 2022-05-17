@@ -1,6 +1,7 @@
 const db = require('../models/index');
 const Tournament = db.Tournament;
 const TeamPlayer = db.TeamPlayer;
+const Player = db.Player;
 
 exports.createTournament =  async (req, res) => {
   const {name, venue, from, to, ongoing, result, team} = req.body;
@@ -85,6 +86,31 @@ exports.getTournaments = async (req, res) => {
       console.log('> RETRIEVE TOURNAMENT DETAILS ERROR: ', error);
       return res.status(400).json({
         message: 'Unable to retrieve tournament details.'
+      });
+    });
+}
+
+exports.getOngoingTournament = async (req, res) => {
+  Tournament.findAll({
+    include: [{
+      model: TeamPlayer,
+      attributes: ['id', 'achievements'],
+      include: [{
+        model: Player,
+        attributes: ['id', 'firstName', 'lastName']
+      }]
+    }],
+    where: {ongoing: 1}
+  })
+    .then((results) => {
+      return res.status(200).json({
+        tournaments: results
+      });
+    })
+    .catch((error) => {
+      console.log('> RETRIEVE ONGOING TOURNAMENT DETAILS ERROR: ', error);
+      return res.status(400).json({
+        message: 'Unable to retrieve ongoing tournament details.'
       });
     });
 }
