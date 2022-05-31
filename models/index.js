@@ -28,6 +28,8 @@ db.BorrowedItemGroup = require('./BorrowedItemGroup')(sequelize, DataTypes);
 db.Coach = require('./Coach')(sequelize, DataTypes);
 db.Tournament = require('./Tournament')(sequelize, DataTypes);
 db.TeamPlayer = require('./TeamPlayer')(sequelize, DataTypes);
+db.PracticeSession = require('./PracticeSession')(sequelize, DataTypes);
+db.PracticeParticipant = require('./PracticeParticipant')(sequelize, DataTypes);
 
 /* Relations */
 
@@ -44,6 +46,10 @@ db.Tournament.hasMany(db.TeamPlayer);
 db.TeamPlayer.belongsTo(db.Tournament);
 // (Player - TeamPlayer)
 db.TeamPlayer.belongsTo(db.Player);
+// (Player - PracticeParticipant)
+db.PracticeParticipant.belongsTo(db.Player);
+// (PracticeParticipant - PracticeSession)
+db.PracticeSession.hasMany(db.PracticeParticipant);
 
 // Sync
 db.sequelize.sync()
