@@ -11,7 +11,7 @@ exports.createSession =  async (req, res) => {
     });
   } else {
     const date2 = new Date();
-    const today = (date2.getFullYear())+"-"+((date2.getMonth()+1)<10?("0"+(date2.getMonth()+1)):(date2.getMonth()+1))+"-"+(date2.getDate());
+    const today = (date2.getFullYear())+"-"+((date2.getMonth()+1)<10?("0"+(date2.getMonth()+1)):(date2.getMonth()+1))+"-"+(date2.getDate()<10?("0"+date2.getDate()):date2.getDate());
     if (ongoing && (date != today)) {
       return res.status(400).json({
         message: `"Date" field must contain today's date because it is an ongoing session.`
@@ -23,20 +23,29 @@ exports.createSession =  async (req, res) => {
         });
       } else {
         if (present.length > 0) {
-          PracticeSession.create({date: date, venue: venue, from: from, to: to, ongoing: ongoing, coach: coach})
-            .then((practiceSession) => {
-              present.map(async (participantId) => {
-                await PracticeParticipant.create({PlayerId: participantId, PracticeSessionId: practiceSession.id});
-              });
-              return res.status(200).json({
-                message: 'Practice session has been created successfully.'
-              });
-            })
-            .catch((error) => {
-              console.log('> CREATE PRACTICE SESSION ERROR: ', error);
-              return res.status(400).json({
-                message: 'Unable to create the practice session.'
-              });
+          PracticeSession.findAll({where: {ongoing: 1}})
+            .then((ongoingSession) => {
+              if (ongoing && ongoingSession.length > 0) {
+                return res.status(400).json({
+                  message: 'Please end the current ongoing session before create another ongoing session.'
+                });
+              } else {
+                PracticeSession.create({date: date, venue: venue, from: from, to: to, ongoing: ongoing, coach: coach})
+                  .then((practiceSession) => {
+                    present.map(async (participantId) => {
+                      await PracticeParticipant.create({PlayerId: participantId, PracticeSessionId: practiceSession.id});
+                    });
+                    return res.status(200).json({
+                      message: 'Practice session has been created successfully.'
+                    });
+                  })
+                  .catch((error) => {
+                    console.log('> CREATE PRACTICE SESSION ERROR: ', error);
+                    return res.status(400).json({
+                      message: 'Unable to create the practice session.'
+                    });
+                  });
+              }
             });
         } else {
           return res.status(400).json({
@@ -71,32 +80,31 @@ exports.getPastSessions = async (req, res) => {
       });
     });
 }
-//
-// exports.getOngoingTournament = async (req, res) => {
-//   Tournament.findAll({
-//     include: [{
-//       model: TeamPlayer,
-//       attributes: ['id', 'achievements'],
-//       include: [{
-//         model: Player,
-//         attributes: ['id', 'firstName', 'lastName']
-//       }]
-//     }],
-//     where: {ongoing: 1}
-//   })
-//     .then((results) => {
-//       return res.status(200).json({
-//         tournaments: results
-//       });
-//     })
-//     .catch((error) => {
-//       console.log('> RETRIEVE ONGOING TOURNAMENT DETAILS ERROR: ', error);
-//       return res.status(400).json({
-//         message: 'Unable to retrieve ongoing tournament details.'
-//       });
-//     });
-// }
-//
+
+exports.getOngoingSession = async (req, res) => {
+  PracticeSession.findAll({
+    include: [{
+      model: PracticeParticipant,
+      include: [{
+        model: Player,
+        attributes: ['id', 'firstName', 'lastName']
+      }]
+    }],
+    where: {ongoing: 1}
+  })
+    .then((results) => {
+      return res.status(200).json({
+        ongoingSession: results[0]
+      });
+    })
+    .catch((error) => {
+      console.log('> RETRIEVE ONGOING SESSION DETAILS ERROR: ', error);
+      return res.status(400).json({
+        message: 'Unable to retrieve ongoing practice session details.'
+      });
+    });
+}
+
 // exports.updateTournament = async (req, res) => {
 //   const {id, name, venue, from, to, result, team} = req.body;
 //   if (name=='' || venue=='' || from=='' || to=='' || result=='') {
