@@ -1,6 +1,7 @@
 const db = require('../models/index');
 const PracticeSession = db.PracticeSession;
 const PracticeParticipant = db.PracticeParticipant;
+const Player = db.Player;
 
 exports.createSession =  async (req, res) => {
   const {venue, date, from, to, ongoing, present, coach} = req.body;
@@ -47,30 +48,29 @@ exports.createSession =  async (req, res) => {
   }
 }
 
-// exports.getPastTournaments = async (req, res) => {
-//   Tournament.findAll({
-//     where: {ongoing: 0},
-//     include: [{
-//       model: TeamPlayer,
-//       attributes: ['id', 'achievements'],
-//       include: [{
-//         model: Player,
-//         attributes: ['id', 'firstName', 'lastName']
-//       }]
-//     }]
-//   })
-//     .then((results) => {
-//       return res.status(200).json({
-//         tournaments: results
-//       });
-//     })
-//     .catch((error) => {
-//       console.log('> RETRIEVE PAST TOURNAMENT DETAILS ERROR: ', error);
-//       return res.status(400).json({
-//         message: 'Unable to retrieve past tournament details.'
-//       });
-//     });
-// }
+exports.getPastSessions = async (req, res) => {
+  PracticeSession.findAll({
+    where: {ongoing: 0},
+    include: [{
+      model: PracticeParticipant,
+      include: [{
+        model: Player,
+        attributes: ['id', 'firstName', 'lastName']
+      }]
+    }]
+  })
+    .then((results) => {
+      return res.status(200).json({
+        sessions: results
+      });
+    })
+    .catch((error) => {
+      console.log('> RETRIEVE PAST SESSION DETAILS ERROR: ', error);
+      return res.status(400).json({
+        message: 'Unable to retrieve past session details.'
+      });
+    });
+}
 //
 // exports.getOngoingTournament = async (req, res) => {
 //   Tournament.findAll({
