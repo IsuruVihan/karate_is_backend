@@ -25,7 +25,7 @@ readdirSync('./routes').map((route) => app.use("/api", require(`./routes/${route
 
 // Sync database, listening on port
 db.sequelize.sync({alter: true}).then(() => {
-  app.listen(3001, () => {
+  app.listen(process.env.PORT || 3001, () => {
     console.log('> SERVER RUNNING ON PORT 3001');
   });
 });
